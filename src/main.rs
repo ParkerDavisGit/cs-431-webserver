@@ -1,8 +1,8 @@
 use std::{
-    fs::File, io::{BufReader, prelude::*}, net::{TcpListener, TcpStream}
+    fs::File, io::{prelude::*}, net::{TcpListener, TcpStream}
 };
 
-use cs431_web_server::request::{self, Request};
+use cs431_web_server::request::{Request};
 use cs431_web_server::response::Response;
 
 fn main() {
@@ -20,7 +20,8 @@ fn main() {
 }
 
 fn handle_connection(mut stream: TcpStream) {
-    let request: Request = Request::handle_request(&stream);
+    let request: Request = Request::handle_request(&stream).expect("AHHHHHHHH");
+    println!("{}", request);
 
     let response: Response = Response::new()
         .with_code(200)
@@ -28,7 +29,7 @@ fn handle_connection(mut stream: TcpStream) {
         .build();
 
     let mut html_string: String = "".to_string();
-    let html_file = File::open("html/index.html").unwrap().read_to_string(&mut html_string);
+    let _ = File::open("html/index.html").unwrap().read_to_string(&mut html_string);
 
     let response = format!("{}{}", response, &html_string);
 

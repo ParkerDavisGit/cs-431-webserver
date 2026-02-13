@@ -1,4 +1,4 @@
-use std::fmt::{Display, write};
+use std::fmt::{Display};
 
 const HTTP_VERSION: f32 = 1.1f32;
 
@@ -39,7 +39,7 @@ pub struct ResponseBuilder<STATE> {
     http_response_code: i32,
     http_response_status: String,
 
-    state: STATE
+    _state: STATE
 }
 
 
@@ -48,7 +48,7 @@ impl ResponseBuilder<Empty> {
         ResponseBuilder { 
             http_response_code: 0, 
             http_response_status: "".to_string(), 
-            state: Empty
+            _state: Empty
         }
     }
 }
@@ -59,7 +59,7 @@ impl ResponseBuilder<Empty> {
         ResponseBuilder { 
             http_response_code: new_code, 
             http_response_status: self.http_response_status, 
-            state: WithCode 
+            _state: WithCode 
         }
     }
 }
@@ -69,7 +69,7 @@ impl ResponseBuilder<WithCode> {
         ResponseBuilder { 
             http_response_code: self.http_response_code, 
             http_response_status: new_status, 
-            state: WithStatus 
+            _state: WithStatus 
         }
     }
 }

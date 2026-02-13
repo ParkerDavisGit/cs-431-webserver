@@ -1,12 +1,24 @@
-use std::{fmt::Display, io::{BufReader, prelude::*}, net::TcpStream};
-
+use std::{collections::HashMap, fmt::Display, io::{BufReader, prelude::*}, net::TcpStream};
+use std::result::Result;
 
 pub struct Request {
-    
+    request_method: String,
+    request_path: String,
+    http_version: String,
+    host: Option<String>,
+    connection: Option<String>,
 }
 
+pub enum RequestError {
+    HostNotFound
+}
+
+// Standard HTTP Request Structure: ORDER IS ARBITRARY after the first line
+// <Request Method> <Path> HTTP/<HTTP Version>
+// Host: <host uri>
+// Connection: <status:> (This is only 'close' for assignment 1)
 impl Request {
-    pub fn handle_request(stream: &TcpStream) -> Request {
+    pub fn handle_request(stream: &TcpStream) -> Result<Request, i32> {
         let buf_reader = BufReader::new(stream);
         let http_request: Vec<_> = buf_reader
             .lines()
@@ -14,21 +26,54 @@ impl Request {
             .take_while(|line| !line.is_empty())
             .collect();
         
-        for line in http_request {
-            println!("{}", line);
+        let mut http_iterator = http_request.into_iter();
+
+        let request_header = http_iterator.next().unwrap();
+        let mut request_headers: HashMap<&str, String> = HashMap::new();
+
+        for line in http_iterator {
+            let mut split_line = line.split(": ");
+            match split_line.next().unwrap() {
+                "Host" => { request_headers.insert("Host", split_line.next().unwrap().to_string()); },
+                "Connection" => { request_headers.insert("Connection", split_line.next().unwrap().to_string()); },
+                _ => {}
+            }
         }
 
-        Request {
-            
-        }
+        //println!("{}", request_headers.get("Connection").unwrap());
+
+        Ok(Request {
+            request_method: "GET".to_owned(),
+            request_path: "/".to_owned(),
+            http_version: "1.1".to_owned(),
+            host: request_headers.get("Host").cloned(),
+            connection: request_headers.get("Connection").cloned()
+        })
     }
 }
 
 impl Display for Request {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let _ = write!(f, "{}", format!(
-            "",
+            "{} {} HTTP/{}\n",
+            self.request_method,
+            self.request_path,
+            self.http_version
         ));
+
+        let _ = match &self.host {
+            Some(host) => {
+                write!(f, "Host: {}\n", host)
+            }
+            None => { Ok(()) }
+        };
+        let _ = match &self.connection {
+            Some(host) => {
+                write!(f, "Connection: {}\n", host)
+            }
+            None => { Ok(()) }
+        };
+
         Ok(())
     }
 }
