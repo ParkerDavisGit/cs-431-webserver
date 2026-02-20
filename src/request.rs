@@ -28,7 +28,7 @@ impl Request {
         
         let mut http_iterator = http_request.into_iter();
 
-        let request_header = http_iterator.next().unwrap();
+        let request_header = http_iterator.next().unwrap().split(" ");
         let mut request_headers: HashMap<&str, String> = HashMap::new();
 
         for line in http_iterator {

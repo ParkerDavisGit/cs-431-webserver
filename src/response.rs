@@ -8,8 +8,11 @@ pub struct Response {
 }
 
 impl Response {
-    pub fn new() -> ResponseBuilder<Empty> {
-        ResponseBuilder::new()
+    pub fn new() -> Response {
+        Response { 
+            http_response_code: 200i32, 
+            http_response_status: "OK".to_string()
+        }
     }
 }
 
@@ -22,64 +25,5 @@ impl Display for Response {
             self.http_response_status
         ));
         Ok(())
-    }
-}
-
-
-
-
-/// Builder Stuff
-// States
-pub struct Empty;
-pub struct WithCode;
-pub struct WithStatus;
-
-
-pub struct ResponseBuilder<STATE> {
-    http_response_code: i32,
-    http_response_status: String,
-
-    _state: STATE
-}
-
-
-impl ResponseBuilder<Empty> {
-    pub fn new () -> ResponseBuilder<Empty>{
-        ResponseBuilder { 
-            http_response_code: 0, 
-            http_response_status: "".to_string(), 
-            _state: Empty
-        }
-    }
-}
-
-
-impl ResponseBuilder<Empty> {
-    pub fn with_code(self, new_code: i32) -> ResponseBuilder<WithCode> {
-        ResponseBuilder { 
-            http_response_code: new_code, 
-            http_response_status: self.http_response_status, 
-            _state: WithCode 
-        }
-    }
-}
-
-impl ResponseBuilder<WithCode> {
-    pub fn with_status(self, new_status: String) -> ResponseBuilder<WithStatus> {
-        ResponseBuilder { 
-            http_response_code: self.http_response_code, 
-            http_response_status: new_status, 
-            _state: WithStatus 
-        }
-    }
-}
-
-
-impl ResponseBuilder<WithStatus> {
-    pub fn build(self) -> Response {
-        Response { 
-            http_response_code: self.http_response_code, 
-            http_response_status: self.http_response_status
-        }
     }
 }
