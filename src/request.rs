@@ -28,7 +28,7 @@ impl Request {
         
         let mut http_iterator = http_request.into_iter();
 
-        let request_header = http_iterator.next().unwrap().split(" ");
+        let _request_header = http_iterator.next().unwrap().split(" ");
         let mut request_headers: HashMap<&str, String> = HashMap::new();
 
         for line in http_iterator {
@@ -50,6 +50,12 @@ impl Request {
             connection: request_headers.get("Connection").cloned()
         })
     }
+}
+
+// Getters
+impl Request {
+    pub fn get_http_method(&self) -> String { self.request_method.clone() }
+    pub fn get_http_version(&self) -> String { self.http_version.clone() }
 }
 
 impl Display for Request {

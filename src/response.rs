@@ -1,19 +1,43 @@
-use std::fmt::{Display};
+use std::{fmt::Display, str::FromStr};
 
-const HTTP_VERSION: f32 = 1.1f32;
+use crate::{http_date::HttpDate, request::Request};
+
+const STATIC_DATA_LOCATION: &str = "static/";
+const HTTP_VERSION: &str = "1.1";
 
 pub struct Response {
     http_response_code: i32,
     http_response_status: String,
+    date: HttpDate
 }
 
 impl Response {
-    pub fn new() -> Response {
-        Response { 
-            http_response_code: 200i32, 
-            http_response_status: "OK".to_string()
+pub fn new_from_request(request: Request) -> Response {
+    let response: Response = Response {
+        http_response_code: 200i32, 
+        http_response_status: "OK".to_string(),
+        date: HttpDate::get_current()
+    };
+
+    println!("{}", HttpDate::get_current());
+
+    match request.get_http_method().as_str() {
+        "GET" => {
+            println!("Apples")
+        }
+        _ => {
+            println!("Hmm")
         }
     }
+
+
+
+    response
+}
+
+fn get_request(request: Request, mut response: Response) -> Response {
+    response
+}
 }
 
 impl Display for Response {

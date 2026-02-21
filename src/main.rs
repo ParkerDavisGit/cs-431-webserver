@@ -28,7 +28,7 @@ fn handle_connection(mut stream: TcpStream) {
     let request: Request = Request::handle_request(&stream).expect("AHHHHHHHH");
     println!("{}", request);
 
-    let response: Response = Response::new();
+    let response: Response = Response::new_from_request(request);
 
     let mut html_string: String = "".to_string();
     let _ = File::open("html/index.html").unwrap().read_to_string(&mut html_string);
