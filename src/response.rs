@@ -12,6 +12,8 @@ pub struct Response {
     http_response_code: i32,
     http_response_status: String,
     date: HttpDate,
+    content_length: u32,
+    connection_status: String,
     allow: Option<Vec<String>>
 }
 
@@ -22,6 +24,8 @@ pub fn new_from_request(request: Request) -> Response {
         http_response_code: Default::default(), 
         http_response_status: Default::default(),
         date: HttpDate::get_current(),
+        content_length: 0u32,
+        connection_status: Default::default(),
         allow: None
     };
 
@@ -30,6 +34,10 @@ pub fn new_from_request(request: Request) -> Response {
     if request.get_http_version().as_str() != "1.1" {
         return Self::set_response_status(response, 505);
     }
+
+    // Set connection status
+    // For now, the connection may only be closed. Or left out, implied closed.
+    let response= Self::set_connection_status(&request, response);
 
 
     let response = match Self::get_response_methods().get(&request.get_http_method()) {
@@ -62,6 +70,32 @@ fn trace_request(request: &Request, mut response: Response) -> Response {
 }
 
 
+// Rewrite this please
+// If the provided connection isn't `close` or `keep-alive`, do I treat as close or 
+//   Throw error?
+fn set_connection_status(request: &Request, mut response: Response) -> Response {
+    match request.get_connection_status() {
+        Some(status) => {
+            match status.as_str() {
+                "close" => {
+                    response.connection_status = "close".to_string();
+                }
+
+                // This is where `keep-alive` will go, however that will not be
+                //   implemented yet.
+
+                _ => {
+                    response.connection_status = "close".to_string();
+                }
+            }
+        }
+        None => {
+            response.connection_status = "close".to_string();
+        }
+    };
+
+    response
+}
 
 fn set_response_status(mut response: Response, status_code: i32) -> Response {
     match status_code {
@@ -127,9 +161,11 @@ impl Display for Response {
 
         // Rest of the headers
         let _ = write!(f, "{}", format!(
-            "Date: {}\r\nServer: {}\r\n", 
+            "Date: {}\r\nServer: {}\r\nConnection: {}\r\nContent-Length: {}\r\n", 
             self.date,
-            SERVER_VERSIONS
+            SERVER_VERSIONS,
+            self.connection_status,
+            self.content_length
         ));
 
         match self.allow.clone() {

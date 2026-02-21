@@ -56,6 +56,7 @@ impl Request {
 impl Request {
     pub fn get_http_method(&self) -> String { self.request_method.clone() }
     pub fn get_http_version(&self) -> String { self.http_version.clone() }
+    pub fn get_connection_status(&self) -> Option<String> { self.connection.clone() }
 }
 
 impl Display for Request {
