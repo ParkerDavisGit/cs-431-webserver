@@ -34,6 +34,7 @@ fn handle_connection(mut stream: TcpStream) {
     let _ = File::open("html/index.html").unwrap().read_to_string(&mut html_string);
 
     let response = format!("{}{}", response, &html_string);
+    println!("{}", response);
 
     stream.write_all(response.as_bytes()).unwrap();
 }
