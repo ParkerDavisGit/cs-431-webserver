@@ -28,7 +28,7 @@ impl Request {
         
         let mut http_iterator = http_request.into_iter();
 
-        let _request_header = http_iterator.next().unwrap().split(" ");
+        let mut request_header = http_iterator.next().unwrap().split(" ").map(|twine| twine.to_string()).collect::<Vec<String>>().into_iter();
         let mut request_headers: HashMap<&str, String> = HashMap::new();
 
         for line in http_iterator {
@@ -43,9 +43,9 @@ impl Request {
         //println!("{}", request_headers.get("Connection").unwrap());
 
         Ok(Request {
-            request_method: "GET".to_owned(),
-            request_path: "/".to_owned(),
-            http_version: "1.1".to_owned(),
+            request_method: request_header.next().unwrap(),
+            request_path: request_header.next().unwrap(),
+            http_version: request_header.next().unwrap().split("/").last().unwrap().to_string(),
             host: request_headers.get("Host").cloned(),
             connection: request_headers.get("Connection").cloned()
         })
