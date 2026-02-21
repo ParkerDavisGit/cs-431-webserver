@@ -35,5 +35,7 @@ fn handle_connection(mut stream: TcpStream) {
 
     let response = format!("{}{}", response, &html_string);
 
+    println!("{}", response);
+
     stream.write_all(response.as_bytes()).unwrap();
 }

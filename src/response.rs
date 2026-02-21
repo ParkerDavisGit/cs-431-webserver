@@ -1,60 +1,117 @@
-use std::{fmt::Display, str::FromStr};
+use std::{collections::HashMap, fmt::Display, hash::Hash, str::FromStr};
 
-use crate::{http_date::HttpDate, request::Request};
+use crate::{http_date::HttpDate, request::Request, response};
 
 const STATIC_DATA_LOCATION: &str = "static/";
+const SERVER_VERSIONS: &str = "CS531Server/a1 Rust/1.85.0";
 const HTTP_VERSION: &str = "1.1";
+
+type MethodFunction = fn(&Request, Response) -> Response;
 
 pub struct Response {
     http_response_code: i32,
     http_response_status: String,
-    date: HttpDate
+    date: HttpDate,
+    allow: Option<Vec<String>>
 }
 
 impl Response {
 pub fn new_from_request(request: Request) -> Response {
     // Instantiate with date (It is the easiest)
-    let mut response: Response = Response {
+    let response: Response = Response {
         http_response_code: Default::default(), 
         http_response_status: Default::default(),
-        date: HttpDate::get_current()
+        date: HttpDate::get_current(),
+        allow: None
     };
 
     // Then, check if HTTP version is correct
     // Only accepting HTTP 1.1
     if request.get_http_version().as_str() != "1.1" {
-        let response_status = Self::get_response_status(505);
-        response.http_response_code = response_status.0;
-        response.http_response_status = response_status.1;
-        return response;
+        return Self::set_response_status(response, 505);
     }
 
 
-    match request.get_http_method().as_str() {
-        "GET" => {
-            println!("Apples")
+    let response = match Self::get_response_methods().get(&request.get_http_method()) {
+        Some(method) => {
+            method(&request, response)
         }
-        _ => {
-            println!("Hmm")
+        None => {
+            Self::set_response_status(response, 505)
         }
-    }
-
-
+    };
 
     response
 }
 
-fn get_request(mut request: Request, mut response: Response) -> Response {
+fn get_request(request: &Request, mut response: Response) -> Response {
     response
 }
 
-fn get_response_status(status_code: i32) -> (i32, String) {
+fn head_request(request: &Request, mut response: Response) -> Response {
+    response
+}
+
+fn options_request(request: &Request, mut response: Response) -> Response {
+    response.allow = Some(Self::get_response_methods().keys().map(|str| str.to_string()).collect());
+    Self::set_response_status(response, 200)
+}
+
+fn trace_request(request: &Request, mut response: Response) -> Response {
+    response
+}
+
+
+
+fn set_response_status(mut response: Response, status_code: i32) -> Response {
     match status_code {
-        200 => { (200, "OK".to_string()) },
-        505 => { (505, "HTTP Version Not Supported".to_string()) },
+        200 => { 
+            response.http_response_code = 200;
+            response.http_response_status = "OK".to_string();
+        },
+        400 => { 
+            response.http_response_code = 400;
+            response.http_response_status = "Bad Request".to_string();
+        },
+        403 => { 
+            response.http_response_code = 403;
+            response.http_response_status = "Forbidden".to_string();
+        },
+        404 => { 
+            response.http_response_code = 404;
+            response.http_response_status = "Not Found".to_string();
+        },
+        500 => { 
+            response.http_response_code = 500;
+            response.http_response_status = "Internal Server Error".to_string();
+        },
+        501 => { 
+            response.http_response_code = 501;
+            response.http_response_status = "Not Implemented".to_string();
+        },
+        505 => { 
+            response.http_response_code = 505;
+            response.http_response_status = "HTTP Version Not Supported".to_string();
+        },
         // Just incase
-        _ => { (500, "Internal Server Error".to_string()) }
+        _ => { 
+            response.http_response_code = 500;
+            response.http_response_status = "Internal Server Error".to_string();
+        }
     }
+    response
+}
+
+
+fn get_response_methods() -> HashMap<String, MethodFunction> {
+    let mut accepted_http_methods: HashMap<String, MethodFunction> = HashMap::new();
+
+    accepted_http_methods.insert("GET".to_string(), Response::get_request);
+    accepted_http_methods.insert("HEAD".to_string(), Response::head_request);
+    accepted_http_methods.insert("OPTIONS".to_string(), Response::options_request);
+    accepted_http_methods.insert("TRACE".to_string(), Response::trace_request);
+
+    accepted_http_methods
 }
 }
 
@@ -70,9 +127,19 @@ impl Display for Response {
 
         // Rest of the headers
         let _ = write!(f, "{}", format!(
-            "Date: {}\r\n\r\n", 
-            self.date
+            "Date: {}\r\nServer: {}\r\n", 
+            self.date,
+            SERVER_VERSIONS
         ));
+
+        match self.allow.clone() {
+            Some(options) => {
+                let _ = write!(f, "Allow: {}\r\n", options.join(", "));
+            },
+            None => {}
+        };
+
+        let _ = write!(f, "\r\n");
 
         Ok(())
     }
