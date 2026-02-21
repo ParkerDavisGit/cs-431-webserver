@@ -13,11 +13,22 @@ pub struct Response {
 
 impl Response {
 pub fn new_from_request(request: Request) -> Response {
-    let response: Response = Response {
-        http_response_code: 200i32, 
-        http_response_status: "OK".to_string(),
+    // Instantiate with date (It is the easiest)
+    let mut response: Response = Response {
+        http_response_code: Default::default(), 
+        http_response_status: Default::default(),
         date: HttpDate::get_current()
     };
+
+    // Then, check if HTTP version is correct
+    // Only accepting HTTP 1.1
+    if request.get_http_version().as_str() != "1.1" {
+        let response_status = Self::get_response_status(505);
+        response.http_response_code = response_status.0;
+        response.http_response_status = response_status.1;
+        return response;
+    }
+
 
     match request.get_http_method().as_str() {
         "GET" => {
@@ -33,8 +44,17 @@ pub fn new_from_request(request: Request) -> Response {
     response
 }
 
-fn get_request(request: Request, mut response: Response) -> Response {
+fn get_request(mut request: Request, mut response: Response) -> Response {
     response
+}
+
+fn get_response_status(status_code: i32) -> (i32, String) {
+    match status_code {
+        200 => { (200, "OK".to_string()) },
+        505 => { (505, "HTTP Version Not Supported".to_string()) },
+        // Just incase
+        _ => { (500, "Internal Server Error".to_string()) }
+    }
 }
 }
 
