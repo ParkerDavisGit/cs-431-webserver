@@ -41,6 +41,10 @@ pub fn new_from_request(request: Request) -> Response {
         return Self::set_response_status(response, 505);
     }
 
+    if !request.get_header_is_correct() {
+        return Self::set_response_status(response, 400);
+    }
+
     // Set connection status
     // For now, the connection may only be closed. Or left out, implied closed.
     let response= Self::set_connection_status(&request, response);
