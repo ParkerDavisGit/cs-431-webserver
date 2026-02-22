@@ -1,5 +1,5 @@
 use std::{
-    fs::File, io::{prelude::*}, net::{TcpListener, TcpStream}
+    io::{prelude::*}, net::{TcpListener, TcpStream}
 };
 
 use cs431_web_server::request::{Request};
@@ -26,16 +26,12 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let request: Request = Request::handle_request(&stream).expect("AHHHHHHHH");
-    println!("{}", request);
+    println!("{}\n\n", request);
 
     let response: Response = Response::new_from_request(request);
 
-    let mut html_string: String = "".to_string();
-    let _ = File::open("html/index.html").unwrap().read_to_string(&mut html_string);
-
-    let response = format!("{}{}", response, &html_string);
-
     println!("{}", response);
 
-    stream.write_all(response.as_bytes()).unwrap();
+    stream.write_all(format!("{}", response).as_bytes()).unwrap();
+    stream.write_all(response.get_body()).unwrap();
 }

@@ -1,4 +1,6 @@
-use std::{collections::HashMap, fmt::Display, hash::Hash, str::FromStr};
+use std::{collections::HashMap, fmt::Display, fs::File, hash::Hash, io::{BufReader, prelude::*}, str::FromStr};
+
+use chrono::Date;
 
 use crate::{http_date::HttpDate, request::Request, response};
 
@@ -12,9 +14,11 @@ pub struct Response {
     http_response_code: i32,
     http_response_status: String,
     date: HttpDate,
-    content_length: u32,
+    content_length: usize,
     connection_status: String,
-    allow: Option<Vec<String>>
+    allow: Option<Vec<String>>,
+    body: Vec<u8>,
+    file_mime_type: String,
 }
 
 impl Response {
@@ -24,9 +28,11 @@ pub fn new_from_request(request: Request) -> Response {
         http_response_code: Default::default(), 
         http_response_status: Default::default(),
         date: HttpDate::get_current(),
-        content_length: 0u32,
+        content_length: Default::default(),
         connection_status: Default::default(),
-        allow: None
+        allow: None,
+        body: Vec::new(),
+        file_mime_type: Default::default()
     };
 
     // Then, check if HTTP version is correct
@@ -45,7 +51,7 @@ pub fn new_from_request(request: Request) -> Response {
             method(&request, response)
         }
         None => {
-            Self::set_response_status(response, 505)
+            Self::set_response_status(response, 400)
         }
     };
 
@@ -53,7 +59,23 @@ pub fn new_from_request(request: Request) -> Response {
 }
 
 fn get_request(request: &Request, mut response: Response) -> Response {
-    response
+    match File::open(format!("static/{}", request.get_request_path())) {
+        Ok(mut file) => {
+            file.read_to_end(&mut response.body).unwrap();
+
+            response.content_length = response.body.len();
+            file.metadata().unwrap().modified();
+
+            Self::set_response_status(
+                Self::set_mime_type(response, request.get_request_path()),
+                200
+            )
+        }
+        Err(_) => {
+            println!("{}", request.get_request_path());
+            Self::set_response_status(response, 404)
+        }
+    }
 }
 
 fn head_request(request: &Request, mut response: Response) -> Response {
@@ -69,6 +91,9 @@ fn trace_request(request: &Request, mut response: Response) -> Response {
     response
 }
 
+fn unimplemented_request(request: &Request, mut response: Response) -> Response {
+    Self::set_response_status(response, 501)
+}
 
 // Rewrite this please
 // If the provided connection isn't `close` or `keep-alive`, do I treat as close or 
@@ -136,6 +161,33 @@ fn set_response_status(mut response: Response, status_code: i32) -> Response {
     response
 }
 
+fn set_mime_type(mut response: Response, file_path: String) -> Response {
+    let file_extension = match file_path.split(".").last() {
+        Some(extentsion) => extentsion,
+        None => "thisll become an octet stream",
+    };
+
+    let mime_type = match file_extension.to_lowercase().as_str() {
+        "txt" => { "text/plain" }
+        "htm" => { "text/html" }
+        "html" => { "text/html" }
+        "xml" => { "text/xml" }
+        "png" => { "image/png" }
+        "jpeg" => { "image/jpeg" }
+        "jpg" => { "image/jpeg" }
+        "gif" => { "image/gif" }
+        "pdf" => { "application/pdf" }
+        "ppt" => { "application/vnd.ms-powerpoint" }
+        "doc" => { "application/vnd.ms-word" }
+        "http" => { "message/http" }
+        _ => { "application/octet-stream" }
+    }.to_string();
+
+    response.file_mime_type = mime_type;
+
+    response
+}
+
 
 fn get_response_methods() -> HashMap<String, MethodFunction> {
     let mut accepted_http_methods: HashMap<String, MethodFunction> = HashMap::new();
@@ -144,6 +196,11 @@ fn get_response_methods() -> HashMap<String, MethodFunction> {
     accepted_http_methods.insert("HEAD".to_string(), Response::head_request);
     accepted_http_methods.insert("OPTIONS".to_string(), Response::options_request);
     accepted_http_methods.insert("TRACE".to_string(), Response::trace_request);
+    accepted_http_methods.insert("POST".to_string(), Response::unimplemented_request);
+    accepted_http_methods.insert("PUT".to_string(), Response::unimplemented_request);
+    accepted_http_methods.insert("DELETE".to_string(), Response::unimplemented_request);
+    accepted_http_methods.insert("CONNECT".to_string(), Response::unimplemented_request);
+    accepted_http_methods.insert("PATCH".to_string(), Response::unimplemented_request);
 
     accepted_http_methods
 }
@@ -161,11 +218,12 @@ impl Display for Response {
 
         // Rest of the headers
         let _ = write!(f, "{}", format!(
-            "Date: {}\r\nServer: {}\r\nConnection: {}\r\nContent-Length: {}\r\n", 
+            "Date: {}\r\nServer: {}\r\nConnection: {}\r\nContent-Length: {}\r\nContent-Type: {}\r\n", 
             self.date,
             SERVER_VERSIONS,
             self.connection_status,
-            self.content_length
+            self.content_length,
+            self.file_mime_type
         ));
 
         match self.allow.clone() {
@@ -177,6 +235,18 @@ impl Display for Response {
 
         let _ = write!(f, "\r\n");
 
+        //let _ = write!(f, "{}", self.body);
+        // for byte in &self.file {
+        //     let _ = write!(f, "{}", byte);
+        // }
+
         Ok(())
+    }
+}
+
+// Extra methods for Display
+impl Response {
+    pub fn get_body(&self) -> &Vec<u8> {
+        &self.body
     }
 }

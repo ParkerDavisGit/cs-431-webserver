@@ -44,7 +44,7 @@ impl Request {
 
         Ok(Request {
             request_method: request_header.next().unwrap(),
-            request_path: request_header.next().unwrap(),
+            request_path: request_header.next().unwrap().split("%20").collect::<Vec<&str>>().join(" "),
             http_version: request_header.next().unwrap().split("/").last().unwrap().to_string(),
             host: request_headers.get("Host").cloned(),
             connection: request_headers.get("Connection").cloned()
@@ -55,6 +55,7 @@ impl Request {
 // Getters
 impl Request {
     pub fn get_http_method(&self) -> String { self.request_method.clone() }
+    pub fn get_request_path(&self) -> String { self.request_path.clone() }
     pub fn get_http_version(&self) -> String { self.http_version.clone() }
     pub fn get_connection_status(&self) -> Option<String> { self.connection.clone() }
 }
