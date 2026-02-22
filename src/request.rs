@@ -46,7 +46,7 @@ impl Request {
             return Ok(Request {
                 request_method: "Ahh".to_string(),
                 request_path: "Ahh".to_string(),
-                http_version: "Ahh".to_string(),
+                http_version: "HTTP/1.1".to_string(),
                 host: request_headers.get("Host").cloned(),
                 connection: request_headers.get("Connection").cloned(),
                 header_is_correct: header_is_correct
@@ -71,6 +71,7 @@ impl Request {
     pub fn get_http_version(&self) -> String { self.http_version.clone() }
     pub fn get_connection_status(&self) -> Option<String> { self.connection.clone() }
     pub fn get_header_is_correct(&self) -> bool { self.header_is_correct }
+    pub fn get_host(&self) -> Option<String> { self.host.clone() }
 }
 
 impl Display for Request {
