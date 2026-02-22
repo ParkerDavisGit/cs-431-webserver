@@ -42,6 +42,16 @@ impl Request {
         }
 
         let header_is_correct = request_header.clone().count() == 3;
+        if !header_is_correct {
+            return Ok(Request {
+                request_method: "Ahh".to_string(),
+                request_path: "Ahh".to_string(),
+                http_version: "Ahh".to_string(),
+                host: request_headers.get("Host").cloned(),
+                connection: request_headers.get("Connection").cloned(),
+                header_is_correct: header_is_correct
+            })
+        }
 
         Ok(Request {
             request_method: request_header.next().unwrap(),
