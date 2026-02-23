@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, fs::File, hash::Hash, io::{BufReader, prelude::*}, str::FromStr};
+use std::{collections::HashMap, fmt::Display, fs::File, hash::Hash, io::{BufReader, prelude::*}, os::windows::fs::MetadataExt, str::FromStr, time::SystemTime};
 
 use chrono::Date;
 
@@ -11,6 +11,7 @@ const HTTP_VERSION: &str = "1.1";
 type MethodFunction = fn(&Request, Response) -> Response;
 
 pub struct Response {
+    request_method: String,
     http_response_code: i32,
     http_response_status: String,
     date: HttpDate,
@@ -19,12 +20,14 @@ pub struct Response {
     allow: Option<Vec<String>>,
     body: Vec<u8>,
     file_mime_type: String,
+    last_modified: HttpDate
 }
 
 impl Response {
 pub fn new_from_request(request: Request) -> Response {
     // Instantiate with date (It is the easiest)
     let response: Response = Response {
+        request_method: Default::default(), 
         http_response_code: Default::default(), 
         http_response_status: Default::default(),
         date: HttpDate::get_current(),
@@ -32,7 +35,8 @@ pub fn new_from_request(request: Request) -> Response {
         connection_status: Default::default(),
         allow: None,
         body: Vec::new(),
-        file_mime_type: Default::default()
+        file_mime_type: Default::default(),
+        last_modified: HttpDate::get_current()
     };
 
     // Then, check if HTTP version is correct
@@ -48,6 +52,8 @@ pub fn new_from_request(request: Request) -> Response {
     if request.get_host() == None {
         return Self::set_response_status(response, 400)
     }
+
+    let response = Self::set_request_method(&request, response);
 
     // Set connection status
     // For now, the connection may only be closed. Or left out, implied closed.
@@ -72,7 +78,8 @@ fn get_request(request: &Request, mut response: Response) -> Response {
             file.read_to_end(&mut response.body).unwrap();
 
             response.content_length = response.body.len();
-            file.metadata().unwrap().modified();
+            //response.last_modified = HttpDate::from_system_time(file.metadata().unwrap().modified().unwrap());
+            //println!("{}", file.metadata().unwrap().modified().unwrap());
 
             Self::set_response_status(
                 Self::set_mime_type(response, request.get_request_path()),
@@ -87,7 +94,21 @@ fn get_request(request: &Request, mut response: Response) -> Response {
 }
 
 fn head_request(request: &Request, mut response: Response) -> Response {
-    response
+    match File::open(format!("static/{}", request.get_request_path())) {
+        Ok(mut file) => {
+            response.content_length = file.metadata().unwrap().file_size() as usize;
+            //response.last_modified = HttpDate::from_system_time(file.metadata().unwrap().modified().unwrap());
+
+            Self::set_response_status(
+                Self::set_mime_type(response, request.get_request_path()),
+                200
+            )
+        }
+        Err(_) => {
+            println!("{}", request.get_request_path());
+            Self::set_response_status(response, 404)
+        }
+    }
 }
 
 fn options_request(request: &Request, mut response: Response) -> Response {
@@ -96,6 +117,7 @@ fn options_request(request: &Request, mut response: Response) -> Response {
 }
 
 fn trace_request(request: &Request, mut response: Response) -> Response {
+    response.body = format!("{}", request).as_bytes().to_vec();
     response
 }
 
@@ -114,7 +136,7 @@ fn set_connection_status(request: &Request, mut response: Response) -> Response 
                     response.connection_status = "close".to_string();
                 }
 
-                // This is where `keep-alive` will go, however that will not be
+                // This is where `keep-alive` will go, however that is not
                 //   implemented yet.
 
                 _ => {
@@ -196,6 +218,11 @@ fn set_mime_type(mut response: Response, file_path: String) -> Response {
     response
 }
 
+fn set_request_method(request: &Request, mut response: Response) -> Response {
+    response.request_method = request.get_http_method();
+    response
+}
+
 
 fn get_response_methods() -> HashMap<String, MethodFunction> {
     let mut accepted_http_methods: HashMap<String, MethodFunction> = HashMap::new();
@@ -242,11 +269,6 @@ impl Display for Response {
         };
 
         let _ = write!(f, "\r\n");
-
-        //let _ = write!(f, "{}", self.body);
-        // for byte in &self.file {
-        //     let _ = write!(f, "{}", byte);
-        // }
 
         Ok(())
     }

@@ -1,5 +1,5 @@
-use std::fmt::Display;
-use chrono::{Datelike, Timelike, Utc};
+use std::{fmt::Display, time::SystemTime};
+use chrono::{DateTime, Datelike, Timelike, Utc};
 
 
 pub enum MONTH {
@@ -15,6 +15,26 @@ pub enum MONTH {
     OCTOBER = 10,
     NOVEMBER = 11,
     DECEMBER = 12
+}
+
+impl MONTH {
+    pub fn from_int(id: u32) -> MONTH {
+        match id {
+            1 => { MONTH::JANUARY },
+            2 => { MONTH::FEBRUARY },
+            3 => { MONTH::MARCH },
+            4 => { MONTH::APRIL },
+            5 => { MONTH::MAY },
+            6 => { MONTH::JUNE },
+            7 => { MONTH::JULY },
+            8 => { MONTH::AUGUST },
+            9 => { MONTH::SEPTEMBER },
+            10 => { MONTH::OCTOBER },
+            11 => { MONTH::NOVEMBER },
+            12 => { MONTH::DECEMBER },
+            _ => { MONTH::JANUARY}
+        }
+    }
 }
 
 impl Display for MONTH {
@@ -57,14 +77,27 @@ impl HttpDate {
         
         HttpDate { 
             day_of_week: now.weekday(),
-            day_of_month: now.month(),
-            month: MONTH::APRIL,
+            day_of_month: now.day(),
+            month: MONTH::from_int(now.month()),
             year: now.year(),
             hour: now.hour(),
             minute: now.minute(),
             second: now.second()
         }
     }
+
+    // pub fn from_system_time(time: SystemTime) -> HttpDate {
+    //     let time:  = DateTime::from(time);
+    //     HttpDate { 
+    //         day_of_week: time.weekday(),
+    //         day_of_month: time.month(),
+    //         month: MONTH::APRIL,
+    //         year: time.year(),
+    //         hour: time.hour(),
+    //         minute: time.minute(),
+    //         second: time.second()
+    //     }
+    // }
 }
 
 

@@ -26,6 +26,7 @@ fn main() {
 
 fn handle_connection(mut stream: TcpStream) {
     let request: Request = Request::handle_request(&stream).expect("AHHHHHHHH");
+    let request_method = request.get_http_method();
     println!("{}\n\n", request);
 
     let response: Response = Response::new_from_request(request);
@@ -33,5 +34,7 @@ fn handle_connection(mut stream: TcpStream) {
     println!("{}", response);
 
     stream.write_all(format!("{}", response).as_bytes()).unwrap();
-    stream.write_all(response.get_body()).unwrap();
+    if request_method == "GET" {
+        stream.write_all(response.get_body()).unwrap();
+    }
 }

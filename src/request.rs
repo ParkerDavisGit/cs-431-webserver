@@ -46,7 +46,7 @@ impl Request {
             return Ok(Request {
                 request_method: "Ahh".to_string(),
                 request_path: "Ahh".to_string(),
-                http_version: "HTTP/1.1".to_string(),
+                http_version: "1.1".to_string(),
                 host: request_headers.get("Host").cloned(),
                 connection: request_headers.get("Connection").cloned(),
                 header_is_correct: header_is_correct
