@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, fs::File, hash::Hash, io::{BufReader, prelude::*}, os::windows::fs::MetadataExt, str::FromStr, time::SystemTime};
+use std::{collections::HashMap, fmt::Display, fs::File, hash::Hash, io::{BufReader, prelude::*}, str::FromStr, time::SystemTime};
 
 use chrono::Date;
 
