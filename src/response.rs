@@ -96,7 +96,7 @@ fn get_request(request: &Request, mut response: Response) -> Response {
 fn head_request(request: &Request, mut response: Response) -> Response {
     match File::open(format!("static/{}", request.get_request_path())) {
         Ok(mut file) => {
-            response.content_length = file.metadata().unwrap().file_size() as usize;
+            response.content_length = file.metadata().unwrap().len() as usize;
             //response.last_modified = HttpDate::from_system_time(file.metadata().unwrap().modified().unwrap());
 
             Self::set_response_status(
