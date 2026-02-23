@@ -55,7 +55,7 @@ impl Request {
 
         Ok(Request {
             request_method: request_header.next().unwrap(),
-            request_path: request_header.next().unwrap().split("127.0.0.1:9003/").last().unwrap().to_string(),
+            request_path: request_header.next().unwrap().split("127.0.0.1:80/").last().unwrap().to_string(),
             http_version: request_header.next().unwrap().split("/").last().unwrap().to_string(),
             host: request_headers.get("Host").cloned(),
             connection: request_headers.get("Connection").cloned(),

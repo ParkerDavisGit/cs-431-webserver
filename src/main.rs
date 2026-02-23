@@ -8,12 +8,12 @@ use cs431_web_server::response::Response;
 
 fn main() {
 
-    let listener = TcpListener::bind("127.0.0.1:9003").unwrap();
+    let listener = TcpListener::bind("127.0.0.1:80").unwrap();
     //let mut current_stream: TcpStream;
 
     // Taken from Terminal-Link's source code.
     // https://github.com/mainrs/terminal-link-rs
-    println!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", "http://127.0.0.1:9003", "127.0.0.1:9003");
+    println!("\u{1b}]8;;{}\u{1b}\\{}\u{1b}]8;;\u{1b}\\", "http://127.0.0.1:80", "127.0.0.1:80");
 
     for stream in listener.incoming() {
         //current_stream = stream.unwrap();
