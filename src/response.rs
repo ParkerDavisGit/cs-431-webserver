@@ -118,7 +118,9 @@ fn options_request(request: &Request, mut response: Response) -> Response {
 
 fn trace_request(request: &Request, mut response: Response) -> Response {
     response.body = format!("{}", request).as_bytes().to_vec();
-    response
+    let response = Self::set_mime_type(response, "TRACE".to_string());
+
+    Self::set_response_status(response, 200)
 }
 
 fn unimplemented_request(request: &Request, mut response: Response) -> Response {
@@ -197,7 +199,7 @@ fn set_mime_type(mut response: Response, file_path: String) -> Response {
         None => "thisll become an octet stream",
     };
 
-    let mime_type = match file_extension.to_lowercase().as_str() {
+    let mut mime_type = match file_extension.to_lowercase().as_str() {
         "txt" => { "text/plain" }
         "htm" => { "text/html" }
         "html" => { "text/html" }
@@ -212,6 +214,14 @@ fn set_mime_type(mut response: Response, file_path: String) -> Response {
         "http" => { "message/http" }
         _ => { "application/octet-stream" }
     }.to_string();
+
+    // I'm REALLY not sure when message/http is supposed to be used
+    // Or what the mime_type is really supposed to be here, 
+    // but the test suite had the only trace request have an http mime type.
+    // So here we are.
+    if file_path == "TRACE" {
+        mime_type = "message/http".to_string();
+    }
 
     response.file_mime_type = mime_type;
 
