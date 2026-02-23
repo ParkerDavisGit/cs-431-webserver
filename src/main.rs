@@ -34,7 +34,7 @@ fn handle_connection(mut stream: TcpStream) {
     println!("{}", response);
 
     stream.write_all(format!("{}", response).as_bytes()).unwrap();
-    if request_method == "GET" {
+    if request_method == "GET" || request_method == "TRACE" {
         stream.write_all(response.get_body()).unwrap();
     }
 }
